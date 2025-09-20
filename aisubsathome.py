@@ -4,22 +4,27 @@ import shutil
 
 class Downloader:
     def __init__(self):
-        self.token = None
+        self.token = "" #make a hugging face account, generate an access token, then paste it here
         self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}],"outtmpl":"%(title)s.%(ext)s", "format":"bestaudio"})
-        self.video_link = ""
-        self.subs_dir = os.path.abspath("")
+        self.video_link = "" 
+        self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles/") #put your own output directory here, with forward slashes
+
+    def set_link(self, link):
+        self.video_link = link
 
     def generate_subs(self, filename):
-        #you can paste the python api code from another hugging face space (using gradio) here then modify the parameters
         from gradio_client import Client, handle_file
-        client = Client("viandoogui/Auto-Subtitle-Generator", hf_token=self.token)
+        #each free hf user can use 3 free minutes of ZeroGPU a day with this space
+        #the site tells you 4, but 1 is blocked out at runtime by default, since computing may or may not finish
+        #as long as you stay under 3 out of 4 minutes of the day (check!), it should work fine
+        client = Client("viandoogui/kotoba-japanese-srt", hf_token=self.token)
         result = client.predict(
-		media_file=handle_file(os.path.normpath(os.path.join(os.path.dirname(__file__), filename + ".opus"))),
-		source_lang="Japanese",
-		target_lang="Japanese",
-		api_name="/subtitle_maker")
-        #this will vary depending on what the output is from above
-        output_path = os.path.normpath(result[0])
+                audio=handle_file(os.path.normpath(os.path.join(os.path.dirname(__file__), filename + ".opus"))),
+                task="transcribe",
+                api_name="/test"
+        )
+        print(result)
+        output_path = os.path.normpath(result[1])
         shutil.move(output_path, self.subs_dir + "/" + filename + ".srt")
         os.remove(filename + ".opus")
 
@@ -29,4 +34,8 @@ class Downloader:
         self.generate_subs(filename)
 
 d = Downloader()
-d.main()
+
+while True:
+    link = input("Enter a Youtube link: ")
+    d.set_link(link)
+    d.main()
