@@ -2,6 +2,7 @@ from yt_dlp import YoutubeDL
 import os
 import shutil
 from gradio_client import Client, handle_file
+import httpx
 
 class Downloader:
     def __init__(self):
@@ -20,12 +21,13 @@ class Downloader:
     def generate_subs(self, filename):
         #Get the link by running this: https://colab.research.google.com/drive/18K_U1uCSHtiFTKNyoZDjBUwa9tT15xpn?usp=sharing
         client = Client(self.gradio_link)
+        client.httpx_kwargs["timeout"] = httpx.Timeout(50)
         result = client.predict(
         media_file=handle_file(os.path.normpath(os.path.join(os.path.dirname(__file__), filename + ".opus"))),
         source_lang="Japanese",
         target_lang="Japanese",
         align=True,
-        api_name="/subtitle_maker"
+        api_name="/subtitle_maker",
         )
         print(result)
 
