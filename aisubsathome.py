@@ -33,8 +33,10 @@ class Downloader:
         print(result)
 
         output_path = os.path.normpath(result)
-        shutil.move(output_path, self.subs_dir + "/" + filename + ".srt")
+        final_dir = self.subs_dir + "/" + filename + ".srt"
+        shutil.move(output_path, final_dir)
         os.remove(filename + "." + self.vid_ext)
+        print("Subtitle file saved to " + final_dir.replace("\\","/"))
         client.close()
 
     def main(self):
