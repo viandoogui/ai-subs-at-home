@@ -8,12 +8,13 @@ class Downloader:
     def __init__(self):
         self.gradio_link = "" 
         self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "progress_hooks":[self.name_hook]})
-        self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles/") #put your own output directory here, with forward slashes
+        self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles") #put your own output directory here, with forward slashes
         self.vid_link = "" 
         self.vid_title = ""
+        self.vid_ext = ""
 
     def name_hook(self, data):
-        self.vid_title, ext = os.path.splitext(data["info_dict"]["_filename"])
+        self.vid_title, self.vid_ext = os.path.splitext(data["info_dict"]["_filename"])
 
     def set_link(self, link):
         self.vid_link = link
@@ -23,7 +24,7 @@ class Downloader:
         client = Client(self.gradio_link)
         client.httpx_kwargs["timeout"] = httpx.Timeout(50)
         result = client.predict(
-        media_file=handle_file(os.path.normpath(os.path.join(os.path.dirname(__file__), filename + ".opus"))),
+        media_file=handle_file(os.path.normpath(os.path.join(os.path.dirname(__file__), filename + "." + self.vid_ext))),
         source_lang="Japanese",
         target_lang="Japanese",
         align=True,
@@ -33,15 +34,12 @@ class Downloader:
 
         output_path = os.path.normpath(result)
         shutil.move(output_path, self.subs_dir + "/" + filename + ".srt")
-        os.remove(filename + ".opus")
+        os.remove(filename + "." + self.vid_ext)
         client.close()
 
     def main(self):
-        try:
-            self.yt.download(self.vid_link)
-        except:
-            print("Download failed, try again or update yt-dlp using 'pip install yt-dlp --upgrade'")
-            return None
+        info_dict = self.yt.extract_info(self.vid_link, download=True)
+        self.vid_ext = info_dict["requested_downloads"][0]["ext"]
         self.generate_subs(self.vid_title)
         
 d = Downloader()
