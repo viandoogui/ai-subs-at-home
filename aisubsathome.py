@@ -20,7 +20,7 @@ class Downloader:
         self.vid_link = link
 
     def generate_subs(self, filename):
-        #Get the link by running this: https://colab.research.google.com/drive/18K_U1uCSHtiFTKNyoZDjBUwa9tT15xpn?usp=sharing
+        #Get the link by running this: https://colab.research.google.com/drive/1pJ7aQOT432yJzVCEdapajTkW093x0iea?usp=sharing
         client = Client(self.gradio_link)
         client.httpx_kwargs["timeout"] = httpx.Timeout(50)
         result = client.predict(
