@@ -7,7 +7,7 @@ import httpx
 
 class Downloader:
     def __init__(self):
-        self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "progress_hooks":[self.name_hook]})
+        self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "progress_hooks":[self.name_hook], "ignoreerrors":True})
         self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles") #put your own output directory here, with forward slashes
         self.gradio_link = "" 
         self.video_link = "" 
@@ -43,8 +43,8 @@ class Downloader:
             final_dir = self.subs_dir + "/" + filename + ".srt"
         else:
             final_dir = self.subs_dir + "/" + subdir + "/" + filename + ".srt"
+
         shutil.move(output_path, final_dir)
-        os.remove(filename + "." + vid_ext)
         print("Subtitle file saved to " + final_dir.replace("\\","/"))
         client.close()
 
@@ -54,15 +54,20 @@ class Downloader:
         if info_dict.get("entries") == None:
             self.vid_ext = info_dict["requested_downloads"][0]["ext"]
             self.generate_subs(self.curr_title, self.vid_ext, None)
+            os.remove(self.curr_title + "." + self.vid_ext)
         else:
             playlist_title = sanitize_filename(info_dict["title"])
             os.mkdir(os.path.join(self.subs_dir, playlist_title))
-            playlist_length = len(info_dict["entries"])
+            playlist_length = len(self.title_list)
             for video in info_dict["entries"]:
-                self.ext_list.append(video["requested_downloads"][0]["ext"])
-            for i in range(len(self.title_list)):
+                if video != None: #video is not private
+                    self.ext_list.append(video["requested_downloads"][0]["ext"])
+            for i in range(playlist_length):
                 print(f"Playlist Progress: {i+1} of {playlist_length} videos")
                 self.generate_subs(self.title_list[i], self.ext_list[i], playlist_title)
+            for i in range(len(self.title_list)):
+                if os.path.isfile(self.title_list[i] + "." + self.ext_list[i]):
+                    os.remove(self.title_list[i] + "." + self.ext_list[i])
 
         self.title_list.clear()
         self.ext_list.clear()
