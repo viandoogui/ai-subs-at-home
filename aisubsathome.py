@@ -1,4 +1,5 @@
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import sanitize_filename
 import os
 import shutil
 from gradio_client import Client, handle_file
@@ -7,7 +8,7 @@ import httpx
 class Downloader:
     def __init__(self):
         self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "progress_hooks":[self.name_hook]})
-        self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles") #put your own output directory here, with forward slashes
+        self.subs_dir = os.path.abspath("C:/Users/anton/Downloads/subtitles/testing") #put your own output directory here, with forward slashes
         self.gradio_link = "" 
         self.video_link = "" 
         self.curr_title = ""
@@ -54,7 +55,7 @@ class Downloader:
             self.vid_ext = info_dict["requested_downloads"][0]["ext"]
             self.generate_subs(self.curr_title, self.vid_ext, None)
         else:
-            playlist_title = info_dict["title"]
+            playlist_title = sanitize_filename(info_dict["title"])
             os.mkdir(os.path.join(self.subs_dir, playlist_title))
             playlist_length = len(info_dict["entries"])
             for video in info_dict["entries"]:
