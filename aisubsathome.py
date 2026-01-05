@@ -8,7 +8,7 @@ import httpx
 class Downloader:
     def __init__(self):
         self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "progress_hooks":[self.name_hook]})
-        self.subs_dir = os.path.abspath("C:/Users/anton/Downloads/subtitles/testing") #put your own output directory here, with forward slashes
+        self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles") #put your own output directory here, with forward slashes
         self.gradio_link = "" 
         self.video_link = "" 
         self.curr_title = ""
