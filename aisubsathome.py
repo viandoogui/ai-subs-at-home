@@ -7,20 +7,13 @@ import httpx
 
 class Downloader:
     def __init__(self):
-        self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "progress_hooks":[self.name_hook], "ignoreerrors":True})
+        self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "ignoreerrors":True})
         self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles") #put your own output directory here, with forward slashes
         self.gradio_link = "" 
         self.video_link = "" 
-        self.curr_title = ""
-        self.prev_title = ""
         self.title_list = []
         self.ext_list = []
-
-    def name_hook(self, data):
-        self.prev_title = self.curr_title
-        self.curr_title, _ = os.path.splitext(data["info_dict"]["_filename"])
-        if self.prev_title != self.curr_title:
-            self.title_list.append(self.curr_title)
+        self.existing = set()
 
     def set_link(self, link):
         self.video_link = link
@@ -51,28 +44,39 @@ class Downloader:
     def main(self):
         info_dict = self.yt.extract_info(self.video_link, download=True)
 
-        if info_dict.get("entries") == None:
-            self.vid_ext = info_dict["requested_downloads"][0]["ext"]
-            self.generate_subs(self.curr_title, self.vid_ext, None)
-            os.remove(self.curr_title + "." + self.vid_ext)
-        else:
+        if info_dict.get("entries") == None: #link is a single video
+            curr_title, _ = os.path.splitext(info_dict["requested_downloads"][0]["_filename"])
+            curr_title = sanitize_filename(curr_title)
+            vid_ext = info_dict["requested_downloads"][0]["ext"]
+            self.generate_subs(curr_title, vid_ext, None)
+            os.remove(curr_title + "." + vid_ext)
+        else: #link is a playlist
             playlist_title = sanitize_filename(info_dict["title"])
             os.mkdir(os.path.join(self.subs_dir, playlist_title))
-            playlist_length = len(self.title_list)
+
             for video in info_dict["entries"]:
                 if video != None: #video is not private
+                    curr_title, _ = os.path.splitext(video["requested_downloads"][0]["_filename"])
+                    self.title_list.append(sanitize_filename(curr_title))
                     self.ext_list.append(video["requested_downloads"][0]["ext"])
+
+            playlist_length = len(self.title_list)
+
             for i in range(playlist_length):
                 print(f"Playlist Progress: {i+1} of {playlist_length} videos")
-                self.generate_subs(self.title_list[i], self.ext_list[i], playlist_title)
+                if self.title_list[i] not in self.existing:
+                    self.generate_subs(self.title_list[i], self.ext_list[i], playlist_title)
+                    self.existing.add(self.title_list[i])
+                else:
+                    print("Video is a duplicate, skipping...")
+
             for i in range(len(self.title_list)):
                 if os.path.isfile(self.title_list[i] + "." + self.ext_list[i]):
                     os.remove(self.title_list[i] + "." + self.ext_list[i])
 
         self.title_list.clear()
         self.ext_list.clear()
-        self.prev_title = ""
-        self.curr_title = ""
+        self.existing.clear()
         
 d = Downloader()
 
