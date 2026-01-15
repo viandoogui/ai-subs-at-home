@@ -22,24 +22,42 @@ class Downloader:
         #Get the gradio link by running this: https://colab.research.google.com/drive/1pJ7aQOT432yJzVCEdapajTkW093x0iea?usp=sharing
         client = Client(self.gradio_link)
         client.httpx_kwargs["timeout"] = httpx.Timeout(50000)
-        result = client.predict(
-        media_file=handle_file(os.path.normpath(os.path.join(os.path.dirname(__file__), filename + "." + vid_ext))),
-        source_lang="Japanese",
-        target_lang="Japanese",
-        align=True,
-        api_name="/subtitle_maker",
-        )
-        print(result)
+        success = False
 
-        output_path = os.path.normpath(result)
-        if subdir == None:
-            final_dir = self.subs_dir + "/" + filename + ".srt"
-        else:
-            final_dir = self.subs_dir + "/" + subdir + "/" + filename + ".srt"
+        while success == False:
+            try:
+                print("Current video: " + filename)
+                result = client.predict(
+                media_file=handle_file(os.path.normpath(os.path.join(os.path.dirname(__file__), filename + "." + vid_ext))),
+                source_lang="Japanese",
+                target_lang="Japanese",
+                align=True,
+                api_name="/subtitle_maker",
+                )
+            except:
+                choice = input("Gradio connection failed. Try again? (y/n) ").lower()
+                while choice != "y" or choice != "yes" or choice != "n" or choice != "no":
+                    if choice == "y" or choice == "yes":
+                        client.close()
+                        client = Client(self.gradio_link)
+                        client.httpx_kwargs["timeout"] = httpx.Timeout(50000)
+                        break
+                    elif choice == "n" or choice == "no":
+                        print("Skipping current video...")
+                        return
+                    else:
+                        choice = input("Invalid input, try again! ")
+            else:
+                output_path = os.path.normpath(result)
+                if subdir == None:
+                    final_dir = self.subs_dir + "/" + filename + ".srt"
+                else:
+                    final_dir = self.subs_dir + "/" + subdir + "/" + filename + ".srt"
 
-        shutil.move(output_path, final_dir)
-        print("Subtitle file saved to " + final_dir.replace("\\","/"))
-        client.close()
+                shutil.move(output_path, final_dir)
+                print("Subtitle file saved to " + final_dir.replace("\\","/"))
+                client.close()
+                success = True
 
     def main(self):
         info_dict = self.yt.extract_info(self.video_link, download=True)
