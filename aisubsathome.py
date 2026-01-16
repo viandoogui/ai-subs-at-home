@@ -7,16 +7,14 @@ import httpx
 
 class Downloader:
     def __init__(self):
-        self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "ignoreerrors":True})
-        self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles") #put your own output directory here, with forward slashes
+        #put your own output directory here, with forward slashes
+        self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles")
+        self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "paths":{"home":self.subs_dir}, "ignoreerrors":True})
         self.gradio_link = "" 
         self.video_link = "" 
         self.title_list = []
         self.ext_list = []
         self.existing = set()
-
-    def set_link(self, link):
-        self.video_link = link
 
     def generate_subs(self, filename, vid_ext, subdir):
         #Get the gradio link by running this: https://colab.research.google.com/drive/1pJ7aQOT432yJzVCEdapajTkW093x0iea?usp=sharing
@@ -28,7 +26,7 @@ class Downloader:
             try:
                 print("Current video: " + filename)
                 result = client.predict(
-                media_file=handle_file(os.path.normpath(os.path.join(os.path.dirname(__file__), filename + "." + vid_ext))),
+                media_file=handle_file(os.path.normpath(os.path.join(self.subs_dir, filename + "." + vid_ext))),
                 source_lang="Japanese",
                 target_lang="Japanese",
                 align=True,
@@ -63,18 +61,18 @@ class Downloader:
         info_dict = self.yt.extract_info(self.video_link, download=True)
 
         if info_dict.get("entries") == None: #link is a single video
-            curr_title, _ = os.path.splitext(info_dict["requested_downloads"][0]["_filename"])
+            curr_title, _ = os.path.splitext(os.path.basename(info_dict["requested_downloads"][0]["_filename"]))
             curr_title = sanitize_filename(curr_title)
             vid_ext = info_dict["requested_downloads"][0]["ext"]
             self.generate_subs(curr_title, vid_ext, None)
-            os.remove(curr_title + "." + vid_ext)
+            os.remove(self.subs_dir + "/" + curr_title + "." + vid_ext)
         else: #link is a playlist
             playlist_title = sanitize_filename(info_dict["title"])
             os.mkdir(os.path.join(self.subs_dir, playlist_title))
 
             for video in info_dict["entries"]:
                 if video != None: #video is not private
-                    curr_title, _ = os.path.splitext(video["requested_downloads"][0]["_filename"])
+                    curr_title, _ = os.path.splitext(os.path.basename(video["requested_downloads"][0]["_filename"]))
                     self.title_list.append(sanitize_filename(curr_title))
                     self.ext_list.append(video["requested_downloads"][0]["ext"])
 
@@ -89,8 +87,8 @@ class Downloader:
                     print("Video is a duplicate, skipping...")
 
             for i in range(len(self.title_list)):
-                if os.path.isfile(self.title_list[i] + "." + self.ext_list[i]):
-                    os.remove(self.title_list[i] + "." + self.ext_list[i])
+                if os.path.isfile(self.subs_dir + "/" + self.title_list[i] + "." + self.ext_list[i]):
+                    os.remove(self.subs_dir + "/" + self.title_list[i] + "." + self.ext_list[i])
 
         self.title_list.clear()
         self.ext_list.clear()
@@ -102,5 +100,5 @@ d.gradio_link = input("Input the current gradio link: ")
 
 while True:
     link = input("Input a Youtube video or playlist link: ")
-    d.set_link(link)
+    d.video_link = link
     d.main()
