@@ -16,7 +16,7 @@ class Downloader:
         self.ext_list = []
         self.existing = set()
 
-    def generate_subs(self, filename, vid_ext, subdir):
+    def generate_subs(self, filename, vid_ext, playlist_name):
         #Get the gradio link by running this: https://colab.research.google.com/drive/1pJ7aQOT432yJzVCEdapajTkW093x0iea?usp=sharing
         client = Client(self.gradio_link)
         client.httpx_kwargs["timeout"] = httpx.Timeout(50000)
@@ -47,10 +47,10 @@ class Downloader:
                         choice = input("Invalid input, try again! ")
             else:
                 output_path = os.path.normpath(result)
-                if subdir == None:
+                if playlist_name == None:
                     final_dir = self.subs_dir + "/" + filename + ".srt"
                 else:
-                    final_dir = self.subs_dir + "/" + subdir + "/" + filename + ".srt"
+                    final_dir = self.subs_dir + "/" + playlist_name + "/" + filename + ".srt"
 
                 shutil.move(output_path, final_dir)
                 print("Subtitle file saved to " + final_dir.replace("\\","/"))
@@ -68,10 +68,12 @@ class Downloader:
             os.remove(self.subs_dir + "/" + curr_title + "." + vid_ext)
         else: #link is a playlist
             playlist_title = sanitize_filename(info_dict["title"])
-            os.mkdir(os.path.join(self.subs_dir, playlist_title))
+            playlist_dir = os.path.join(self.subs_dir, playlist_title)
+            if os.path.isdir(playlist_dir) == False:
+                os.mkdir(playlist_dir)
 
             for video in info_dict["entries"]:
-                if video != None: #video is not private
+                if video != None: #video is not private/no error occurred
                     curr_title, _ = os.path.splitext(os.path.basename(video["requested_downloads"][0]["_filename"]))
                     self.title_list.append(sanitize_filename(curr_title))
                     self.ext_list.append(video["requested_downloads"][0]["ext"])
@@ -86,7 +88,7 @@ class Downloader:
                 else:
                     print("Video is a duplicate, skipping...")
 
-            for i in range(len(self.title_list)):
+            for i in range(len(self.title_list)): #delete temporary audio
                 if os.path.isfile(self.subs_dir + "/" + self.title_list[i] + "." + self.ext_list[i]):
                     os.remove(self.subs_dir + "/" + self.title_list[i] + "." + self.ext_list[i])
 
