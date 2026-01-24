@@ -9,7 +9,11 @@ class Downloader:
     def __init__(self):
         #put your own output directory here, with forward slashes
         self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles")
-        self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "paths":{"home":self.subs_dir}, "ignoreerrors":True})
+        self.append_id = True #append id's to video/playlist names
+        if self.append_id == True:
+            self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "format":"bestaudio", "paths":{"home":self.subs_dir}, "ignoreerrors":True})
+        else:
+            self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "paths":{"home":self.subs_dir}, "ignoreerrors":True})
         self.gradio_link = "" 
         self.video_link = "" 
         self.title_list = []
@@ -68,6 +72,9 @@ class Downloader:
             os.remove(self.subs_dir + "/" + curr_title + "." + vid_ext)
         else: #link is a playlist
             playlist_title = sanitize_filename(info_dict["title"])
+            if self.append_id == True: 
+                playlist_title = playlist_title + " " + f"[{info_dict["id"]}]"
+
             playlist_dir = os.path.join(self.subs_dir, playlist_title)
             if os.path.isdir(playlist_dir) == False:
                 os.mkdir(playlist_dir)
