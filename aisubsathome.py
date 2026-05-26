@@ -11,9 +11,9 @@ class Downloader:
         self.subs_dir = os.path.abspath("C:/Users/bob/Downloads/subtitles")
         self.append_id = True #append id's to video/playlist names
         if self.append_id == True:
-            self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "format":"bestaudio", "paths":{"home":self.subs_dir}, "ignoreerrors":True})
+            self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "format":"bestaudio/best", "paths":{"home":self.subs_dir}, "ignoreerrors":True})
         else:
-            self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "outtmpl":"%(title)s.%(ext)s", "format":"bestaudio", "paths":{"home":self.subs_dir}, "ignoreerrors":True})
+            self.yt = YoutubeDL({"postprocessors":[{"key":"FFmpegExtractAudio"}], "format":"bestaudio/best", "outtmpl":"%(title)s.%(ext)s", "paths":{"home":self.subs_dir}, "ignoreerrors":True})
         self.gradio_link = "" 
         self.video_link = "" 
         self.title_list = []
